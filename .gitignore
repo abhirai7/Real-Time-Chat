@@ -12,5 +12,4 @@ Thumbs.db
 dist/
 *.cache
 package-lock.json
-package.json
 test.json
