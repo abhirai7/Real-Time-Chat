@@ -106,10 +106,8 @@
         const sendButton = document.getElementById("send");
         const timerElement = document.getElementById("timer");
 
-        // Join the room
         socket.emit("join-room", roomId);
 
-        // Load existing messages
         socket.on("load-messages", ({ messages, expiresAt }) => {
             messages.forEach(({ username, message, timestamp }) => {
                 const li = document.createElement("li");
@@ -117,22 +115,18 @@
                 messagesContainer.appendChild(li);
             });
 
-            // Scroll to the latest message
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
 
-            // Start the timer
             const endTime = new Date(expiresAt);
             updateTimer(endTime);
             setInterval(() => updateTimer(endTime), 1000);
         });
 
-        // Room expired
         socket.on("room-expired", () => {
             alert("This chat room has expired.");
             window.location.href = "/";
         });
 
-        // Display new messages
         socket.on("message", ({ username, message, timestamp }) => {
             const li = document.createElement("li");
             li.innerHTML = `<strong class="text-primary">${username}:</strong> ${message} <span class="text-muted" style="font-size: 0.8em;">(${timestamp})</span>`;
@@ -140,17 +134,14 @@
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
         });
 
-        // Send a message when the button is clicked
         sendButton.addEventListener("click", sendMessage);
 
-        // Send a message when Enter is pressed in the message input
         messageInput.addEventListener("keydown", (event) => {
             if (event.key === "Enter") {
                 sendMessage();
             }
         });
 
-        // Function to send a message
         function sendMessage() {
             const username = usernameInput.value.trim();
             const message = messageInput.value.trim();
@@ -162,7 +153,6 @@
             }
         }
 
-        // Timer countdown
         function updateTimer(endTime) {
             const now = new Date();
             const diff = Math.max(0, endTime - now);

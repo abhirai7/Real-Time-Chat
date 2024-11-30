@@ -13,3 +13,4 @@ dist/
 *.cache
 package-lock.json
 test.json
+public/messages
