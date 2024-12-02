@@ -8,7 +8,8 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-const chatRooms = {};
+const chatRooms = {}; 
+const userCounts = {}; 
 
 app.use(express.static(path.resolve("./public")));
 
@@ -30,8 +31,7 @@ io.on("connection", (socket) => {
     console.log("A user connected.");
 
     socket.on("create-room", (roomId) => {
-        const expiresAt = new Date(Date.now() + 15
-         * 60 * 1000);
+        const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // Room expires in 15 minutes
         chatRooms[roomId] = { messages: [], expiresAt };
 
         console.log(`Room created: ${roomId}, expires at ${expiresAt}`);
@@ -39,8 +39,9 @@ io.on("connection", (socket) => {
 
         setTimeout(() => {
             delete chatRooms[roomId];
+            delete userCounts[roomId];
             console.log(`Room expired: ${roomId}`);
-        }, 15 * 60 * 1000); 
+        }, 15 * 60 * 1000);
     });
 
     socket.on("join-room", (roomId) => {
@@ -48,9 +49,27 @@ io.on("connection", (socket) => {
 
         if (room && new Date() < room.expiresAt) {
             socket.join(roomId);
-            console.log(`User joined room: ${roomId}`);
+
+            if (!userCounts[roomId]) userCounts[roomId] = 0;
+            userCounts[roomId]++;
+
+            io.to(roomId).emit("update-user-count", userCounts[roomId]);
+
+            console.log(`User joined room: ${roomId}, Users in room: ${userCounts[roomId]}`);
 
             socket.emit("load-messages", { messages: room.messages, expiresAt: room.expiresAt });
+
+            socket.on("disconnect", () => {
+                if (userCounts[roomId]) {
+                    userCounts[roomId]--;
+                    if (userCounts[roomId] <= 0) {
+                        delete userCounts[roomId];
+                    } else {
+                        io.to(roomId).emit("update-user-count", userCounts[roomId]);
+                    }
+                }
+                console.log(`A user disconnected from room: ${roomId}, Remaining users: ${userCounts[roomId] || 0}`);
+            });
         } else {
             socket.emit("room-expired");
         }
@@ -62,14 +81,12 @@ io.on("connection", (socket) => {
 
         if (room && new Date() < room.expiresAt) {
             const newMessage = { username, message, timestamp };
-            room.messages.push(newMessage); 
-            fs.writeFileSync(`./public/messages/${roomId}.json`, JSON.stringify(room.messages));
-            io.to(roomId).emit("message", newMessage); 
-        }
-    });
+            room.messages.push(newMessage);
 
-    socket.on("disconnect", () => {
-        console.log("A user disconnected.");
+            fs.writeFileSync(`./public/messages/${roomId}.json`, JSON.stringify(room.messages));
+
+            io.to(roomId).emit("message", newMessage);
+        }
     });
 });
 
