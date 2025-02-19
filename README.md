@@ -1,6 +1,4 @@
-Here's a **README.md** file for your **Real-Time Chat** project on GitHub:  
 
-```markdown
 # Real-Time Chat
 
 A real-time chat application that enables seamless messaging between users. Built with modern web technologies, this project ensures instant communication with a user-friendly interface.
