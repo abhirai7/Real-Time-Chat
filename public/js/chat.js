@@ -1,6 +1,7 @@
 const socket = io();
 const roomId = window.location.pathname.split("/").pop();
 const messagesContainer = document.getElementById("messages");
+const avatars = document.getElementById("avatars");
 const usernameInput = document.getElementById("username");
 const messageInput = document.getElementById("message");
 const sendButton = document.getElementById("send");
@@ -9,8 +10,9 @@ const timerElement = document.getElementById("timer");
 socket.emit("join-room", roomId);
 
 socket.on("load-messages", ({ messages, expiresAt }) => {
-  messages.forEach(({ username, message, timestamp }) => {
-    addMessage(username, message, timestamp);
+
+  messages.forEach(({ avatar, username, message, timestamp }) => {
+    addMessage(avatar, username, message, timestamp);
   });
 
   const endTime = new Date(expiresAt);
@@ -23,8 +25,8 @@ socket.on("room-expired", () => {
   window.location.href = "/";
 });
 
-socket.on("message", ({ username, message, timestamp }) => {
-  addMessage(username, message, timestamp);
+socket.on("message", ({avatar, username, message, timestamp }) => {
+  addMessage(avatar, username, message, timestamp);
 });
 
 sendButton.addEventListener("click", sendMessage);
@@ -34,19 +36,20 @@ messageInput.addEventListener("keydown", (event) => {
 });
 
 function sendMessage() {
+  const avatar = avatars.value;
   const username = usernameInput.value.trim();
   const message = messageInput.value.trim();
   if (username && message) {
-    socket.emit("message", { roomId, username, message });
+    socket.emit("message", { roomId, avatar, username, message });
     messageInput.value = "";
   } else {
     alert("Username and message cannot be empty.");
   }
 }
 
-function addMessage(username, message, timestamp) {
+function addMessage(avatar, username, message, timestamp) {
   const li = document.createElement("li");
-  li.innerHTML = `<strong class="text-primary">${username}:</strong> ${message} <span class="text-muted" style="font-size: 0.8em;">(${timestamp})</span>`;
+  li.innerHTML = `<span>${avatar} </span><strong class="text-primary">${username}:</strong> ${message} <span class="text-muted" style="font-size: 0.8em;">(${timestamp})</span>`;
   messagesContainer.appendChild(li);
   messagesContainer.scrollTop = messagesContainer.scrollHeight;
 }
@@ -75,6 +78,7 @@ const exportButton = document.getElementById("exportChats");
 exportButton.addEventListener("click", () => {
   const chatLog = [];
   document.querySelectorAll("#messages li").forEach((li) => {
+    const avatar = li.querySelector("p")?.innerText || "";
     const username =
       li.querySelector(".text-primary")?.innerText.replace(":", "") ||
       "Unknown";
@@ -85,7 +89,7 @@ exportButton.addEventListener("click", () => {
         ?.innerText.replace("(", "")
         .replace(")", "") || "";
 
-    chatLog.push({ username, message, timestamp });
+    chatLog.push({ avatar, username, message, timestamp });
   });
 
   if (chatLog.length === 0) {
@@ -126,7 +130,7 @@ exportButton.addEventListener("click", () => {
       y = 20;
     }
 
-    const message = `${index + 1}. ${log.username} [${log.timestamp}]: ${
+    const message = `${index + 1}. ${log.avatar} ${log.username} [${log.timestamp}]: ${
       log.message.substring(0, log.message.length - 3)
     }`;
     const wrappedText = doc.splitTextToSize(message, textWidth);

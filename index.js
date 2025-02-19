@@ -75,12 +75,12 @@ io.on("connection", (socket) => {
         }
     });
 
-    socket.on("message", ({ roomId, username, message }) => {
+    socket.on("message", ({ roomId, avatar, username, message }) => {
         const timestamp = new Date().toLocaleTimeString();
         const room = chatRooms[roomId];
 
         if (room && new Date() < room.expiresAt) {
-            const newMessage = { username, message, timestamp };
+            const newMessage = { avatar, username, message, timestamp };
             room.messages.push(newMessage);
 
             fs.writeFileSync(`./public/messages/${roomId}.json`, JSON.stringify(room.messages));
